@@ -1,0 +1,2 @@
+C:\Users\joshu\Desktop\KTANE Mods 2\ktaneQuizbowl-master\obj\Debug\Assembly-CSharp.csproj.AssemblyReference.cache
+C:\Users\joshu\Desktop\KTANE Mods 2\ktaneQuizbowl-master\obj\Debug\Assembly-CSharp.csproj.CoreCompileInputs.cache
