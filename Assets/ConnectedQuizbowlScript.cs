@@ -20,9 +20,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
     string answer = "";
     bool _isSolved = false;
 
-    string queryGetRandomURL1 = "https://qbreader.org/api/set-list";
-    string queryGetRandomURL2 = "https://qbreader.org/api/num-packets?setName=";
-    string queryGetRandomURL3 = "https://qbreader.org/api/packet?setName=";
+    string queryGetRandomURL = "https://qbreader.org/api/random-tossup";
     string yourAnswer = "";
     string currentClueDisplay;
 
@@ -98,9 +96,6 @@ public class ConnectedQuizbowlScript : MonoBehaviour
     {
         Submit = false;
         StopCoroutine(Pinger());
-        queryGetRandomURL1 = "https://qbreader.org/api/set-list";
-        queryGetRandomURL2 = "https://qbreader.org/api/num-packets?setName=";
-        queryGetRandomURL3 = "https://qbreader.org/api/packet?setName=";
         StartCoroutine(Pinger());
         Hint.text = "Connecting...";
     }
@@ -409,119 +404,62 @@ public class ConnectedQuizbowlScript : MonoBehaviour
     IEnumerator Pinger()
     {
         reroll = false;
-        string set = "";
-        int packId= 0;
         connecting = true;
-        WWW www1 = new WWW(queryGetRandomURL1);
+        WWW www1 = new WWW(queryGetRandomURL);
         while (!www1.isDone) { yield return null; if (www1.error != null) break; };
         if (www1.error == null)
         {
+            Debug.LogFormat("[Connected Quizbowl #{0}] Connected to the Internet", moduleId);
             try
             {
+                
                 List<string> sets = new List<string>();
                 var result = JObject.Parse(www1.text);
-                sets = result["setList"].ToObject<List<string>>();
-                int setId = Rnd.Range(0, sets.Count);
-                set = sets[setId];
+                selectedTossup = result["tossups"][0]["question"].ToString();
+                answer = result["tossups"][0]["answer"].ToString();
+
+                if (selectedTossup.Contains("?"))
+                {
+                    selectedTossup = selectedTossup.Replace("?", ".");
+                }
+                if (selectedTossup.Contains("”"))
+                {
+                    selectedTossup = selectedTossup.Replace("”", "\"");
+                }
+                if (selectedTossup.Contains("“"))
+                {
+                    selectedTossup = selectedTossup.Replace("“", "\"");
+                }
+
+
+                string[] chari3 = { "Ã³", "Ã­", "Ã¤", "Ã¶" };
+                string[] chari4 = { "ó", "í", "ä", "ö" };
+
+                for (int i = 0; i < chari3.Length; i++)
+                {
+                    if (selectedTossup.Contains(chari3[i]))
+                    {
+                        selectedTossup = selectedTossup.Replace(chari3[i], chari4[i]);
+                    }
+                    if (answer.Contains(chari3[i]))
+                    {
+                        answer = answer.Replace(chari3[i], chari4[i]);
+                    }
+                }
+                Debug.LogFormat("[Connected Quizbowl #{0}] Tossup: {1}", moduleId, selectedTossup);
+                Debug.LogFormat("[Connected Quizbowl #{0}] Answerline: {1}", moduleId, answer);
+                connecting = false;
+                activated = true;
+                Hint.text = "Connected";
             }
             catch (JsonReaderException)
             {
-                Debug.LogFormat("Cannot Get Set");
+                Debug.LogFormat("Cannot Get Random Tossup");
                 yield break;
             }
             
         }
         
-        queryGetRandomURL2 += set;
-        queryGetRandomURL3 += set + "&packetNumber=";
-        WWW www2 = new WWW(queryGetRandomURL2);
-        while (!www2.isDone) { yield return null; if (www2.error != null) break; };
-        if (www2.error == null)
-        {
-            try
-            {
-                var result = JObject.Parse(www2.text);
-                int packAmount = Int32.Parse(result["numPackets"].ToString());
-                packId = Rnd.Range(1, packAmount+1);
-            }
-            catch (JsonReaderException)
-            {
-                Debug.LogFormat("Cannot Get Pack ID");
-                yield break;
-            }
-
-        }
-        
-        queryGetRandomURL3 += packId;
-        WWW www3 = new WWW(queryGetRandomURL3);
-        while (!www3.isDone) { yield return null; if (www3.error != null) break; };
-        if (www3.error == null)
-        {
-            try
-            {
-                string possibleTossup = "";
-                var result = JObject.Parse(www3.text);
-
-                if (result["tossups"].ToString() == "[]")
-                {
-                    reroll = true;
-                    Hint.text = "Please Press Reroll.";
-                }
-                else
-                {
-                    int number = Int32.Parse(result["tossups"].Last["number"].ToString());
-                    int tossupNumber = Rnd.Range(0, number);
-                    possibleTossup = result["tossups"][tossupNumber]["question"].ToString();
-                    if (!reroll)
-                    {
-                        Debug.LogFormat("{0} Packet {1} Tossup {2}: {3}", set, packId, tossupNumber, possibleTossup);
-                        selectedTossup = possibleTossup;
-                        answer = result["tossups"][tossupNumber]["answer"].ToString();
-                        if (selectedTossup.Contains("?"))
-                        {
-                            selectedTossup = selectedTossup.Replace("?", ".");
-                        }
-                        if (selectedTossup.Contains("”"))
-                        {
-                            selectedTossup = selectedTossup.Replace("”", "\"");
-                        }
-                        if (selectedTossup.Contains("“"))
-                        {
-                            selectedTossup = selectedTossup.Replace("“", "\"");
-                        }
-
-
-                        string[] chari3 = { "Ã³", "Ã­", "Ã¤", "Ã¶" };
-                        string[] chari4 = { "ó", "í", "ä", "ö" };
-
-                        for (int i = 0; i < chari3.Length; i++)
-                        {
-                            if (selectedTossup.Contains(chari3[i]))
-                            {
-                                selectedTossup = selectedTossup.Replace(chari3[i], chari4[i]);
-                            }
-                            if (answer.Contains(chari3[i]))
-                            {
-                                answer = answer.Replace(chari3[i], chari4[i]);
-                            }
-                        }
-                        Debug.LogFormat("[Connected Quizbowl #{0}] Tossup: {1}", moduleId, selectedTossup);
-                        Debug.LogFormat("[Connected Quizbowl #{0}] Answerline: {1}", moduleId, answer);
-                        connecting = false;
-                        activated = true;
-                        Hint.text = "Connected";
-
-                    }
-                }
-                
-            }
-            catch (JsonReaderException)
-            {
-                Debug.LogFormat("Cannot Get Tossup");
-                yield break;
-            }
-
-        }
         else
         {
             string chari1 = "âáàäāçéèêḥíīïñóöșúū";
@@ -548,7 +486,8 @@ public class ConnectedQuizbowlScript : MonoBehaviour
             }
             connecting = true;
             online = false;
-            toss = Rnd.Range(0, 200) * 2;
+            Debug.LogFormat("[Connected Quizbowl #{0}] Offline Version", moduleId);
+            toss = Rnd.Range(0, 60) * 2;
             ans = toss + 1;
             selectedTossup = TossupList.phrases[toss];
             answer = TossupList.phrases[ans];
