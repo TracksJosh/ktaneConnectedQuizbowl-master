@@ -430,7 +430,14 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                 {
                     selectedTossup = selectedTossup.Replace("“", "\"");
                 }
-
+                if (selectedTossup.Contains("U. S."))
+                {
+                    selectedTossup = selectedTossup.Replace("U. S.", "US");
+                }
+                if (selectedTossup.Contains("U.S."))
+                {
+                    selectedTossup = selectedTossup.Replace("U.S.", "US");
+                }
 
                 string[] chari3 = { "Ã³", "Ã­", "Ã¤", "Ã¶" };
                 string[] chari4 = { "ó", "í", "ä", "ö" };
@@ -579,7 +586,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
             StartCoroutine(TextingAnswer());
             if (currentClue >= clues.Length - 2)
             {
-                clues[0] += "Press Next to get Next Tossup.";
+                clues[0] = "Press Next to get Next Tossup.";
                 currentClueDisplay = clues[0];
                 currentClue = 0;
                 nextTossup = true;
