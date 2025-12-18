@@ -19,6 +19,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
     string selectedTossup = "";
     string answer = "";
     bool _isSolved = false;
+    bool _isBusy = false;
 
     string queryGetRandomURL = "https://qbreader.org/api/random-tossup";
     string yourAnswer = "";
@@ -243,8 +244,9 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                     }
                     else if (TheLetters[i].ToString() == "e".ToString())
                     {
-                        if (_isSolved == false)
+                        if (_isSolved == false && _isBusy == false)
                         {
+                            _isBusy = true;
                             handleEnter();
                         }
                     }
@@ -574,6 +576,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
             Answering.text = "";
             _isSolved = true;
             bombModule.HandlePass();
+            _isBusy = false;
         }
         else
         {
@@ -582,6 +585,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
             yourAnswer = "";
             Answering.text = "";
             Submit = false;
+            _isBusy = false;
             StartCoroutine(TextingClue());
             StartCoroutine(TextingAnswer());
             if (currentClue >= clues.Length - 2)
