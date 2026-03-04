@@ -104,92 +104,21 @@ public class ConnectedQuizbowlScript : MonoBehaviour
     void EnterMode()
     {
         activated = false;
-        selectedTossup = selectedTossup.Replace('.', '÷');
-        string helperTossup = "";
         
-        for (int i = 0; i < selectedTossup.Length - 1; i++)
-        {
-            
-            if (selectedTossup[i] == '÷' && selectedTossup[i + 1] == ' ')
-            {
-                if (i + 2 < selectedTossup.Length)
-                {
-                    if (Char.IsLower(selectedTossup[i + 2]))
-                    {
-                        helperTossup += @"÷";
-                    }
-                    else
-                    {
-                        helperTossup += @".";
-                    }
+        selectedTossup = selectedTossup.Replace("“", "\"").Replace("”", "\"").Trim();
+        
+        clues = SplitIntoClues(selectedTossup);
 
-                }
-            }
-            if (selectedTossup[i] == '÷' && selectedTossup[i + 1] != ' ')
-            {
-                if (Char.IsUpper(selectedTossup[i + 1]))
-                {
-                    helperTossup += @".";
-                }
-                else
-                {
-                    helperTossup += @"÷";
-                }
-            }
-            else
-            {
-                helperTossup += selectedTossup[i];
-            }
-        }
-        helperTossup += @".";
-        helperTossup = helperTossup.Replace("<b>", "");
-        helperTossup = helperTossup.Replace("</b>", "");
-        List<string> temp = new List<string>();
-        clues2 = helperTossup.Split(new string[] { "÷\"" }, StringSplitOptions.None).ToList();
-        int g = clues2.Count - 1;
-        
-        for (int i = g; i >= 0; i--)
+        if (clues.Length > 0)
         {
-            if(i == clues2.Count - 1)
-            {
-                
-                List<string> tmp = new List<string>();
-                foreach (string s in clues2)
-                {
-                    tmp = s.Split('.').ToList();
-                    for (int j = 0; j < tmp.Count; j++)
-                    {
-                        tmp[j] += '.';
-                        temp.Add(tmp[j]);
-                    }
-                }
-            }
+            currentClue = 0;
+            currentClueDisplay = clues[currentClue];
+            StartCoroutine(TextingClue());
         }
-        clues2 = temp;
-        int[] quma = new int[clues2.Count];
-        for (int i = 0; i < clues2.Count; i++)
+        else
         {
-            int count = 0;
-            while (count < clues2[i].Length && clues2[i][count] == '\"') count++;
-            if (count % 2 == 1) quma[i] = 1;
-            if (quma[i] == 1) clues2[i] += "\"";
+            Debug.LogFormat("[Connected Quizbowl #{0}] No clues generated!", moduleId);
         }
-        
-        //clues = Regex.Split(helperTossup, @"(?<=[\.!\?])\s+");
-
-        clues = new string[clues2.Count];
-        clues = clues2.ToArray();
-        //for (int i = 0; i < clues.Length-1; i++)
-        //{
-        //    Debug.LogFormat("{0}, {1}", clues[i][clues[i].Length - 1], clues[i + 1][0]);
-        //    if (clues[i][clues[i].Length - 1] == '.' && clues[i + 1][1] == '\"')
-        //    {
-        //        helperTossup += @".";
-        //        helperTossup += "\"";
-        //    }
-        //}
-        currentClueDisplay = clues[0];
-        StartCoroutine(TextingClue());
     }
 
     // Update is called once per frame
@@ -391,7 +320,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
 
             yield return new WaitForSecondsRealtime(0.03f);
         }
-        if ((Hint.text.Length >= currentClueDisplay.Length && currentClue < clues.Length - 2) || nextTossup)
+        if ((Hint.text.Length >= currentClueDisplay.Length && currentClue < clues.Length - 1) || nextTossup)
         {
             showNext = true;
         }
@@ -420,10 +349,6 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                 selectedTossup = result["tossups"][0]["question"].ToString();
                 answer = result["tossups"][0]["answer"].ToString();
 
-                if (selectedTossup.Contains("?"))
-                {
-                    selectedTossup = selectedTossup.Replace("?", ".");
-                }
                 if (selectedTossup.Contains("”"))
                 {
                     selectedTossup = selectedTossup.Replace("”", "\"");
@@ -431,14 +356,6 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                 if (selectedTossup.Contains("“"))
                 {
                     selectedTossup = selectedTossup.Replace("“", "\"");
-                }
-                if (selectedTossup.Contains("U. S."))
-                {
-                    selectedTossup = selectedTossup.Replace("U. S.", "US");
-                }
-                if (selectedTossup.Contains("U.S."))
-                {
-                    selectedTossup = selectedTossup.Replace("U.S.", "US");
                 }
 
                 string[] chari3 = { "Ã³", "Ã­", "Ã¤", "Ã¶" };
@@ -597,6 +514,40 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                 showBuzz = false;
             }
         }
+    }
+
+    private string[] SplitIntoClues(string text)
+    {
+        if (text == null || text.Trim().Length == 0)
+            return new string[0];
+
+        text = text.Replace("“", "\"")
+                   .Replace("”", "\"")
+                   .Trim();
+
+        text = Regex.Replace(text, @"\.{2,}", ".");
+        text = Regex.Replace(text, @"\.\s*\n", ". ");
+        text = Regex.Replace(text, @"\s+\.", ".");
+
+        text = text.Replace("Mrs.", "Mrs§")
+                   .Replace("Mr.", "Mr§")
+                   .Replace("Ms.", "Ms§")
+                   .Replace("Dr.", "Dr§")
+                   .Replace("St.", "St§");
+
+        string[] sentences = Regex.Split(
+            text,
+            @"(?<=[.!?][""]?)\s+(?=[A-Z])"
+        );
+
+        for (int i = 0; i < sentences.Length; i++)
+        {
+            sentences[i] = sentences[i]
+                .Replace("§", ".")
+                .Trim();
+        }
+
+        return sentences;
     }
 
     //twitch plays
