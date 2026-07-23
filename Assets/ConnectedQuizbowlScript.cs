@@ -346,7 +346,7 @@ public class ConnectedQuizbowlScript : MonoBehaviour
                 
                 List<string> sets = new List<string>();
                 var result = JObject.Parse(www1.text);
-                selectedTossup = result["tossups"][0]["question"].ToString();
+                selectedTossup = result["tossups"][0]["question_sanitized"].ToString();
                 answer = result["tossups"][0]["answer"].ToString();
 
                 if (selectedTossup.Contains("”"))
